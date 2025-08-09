@@ -13,6 +13,7 @@ public class HealthCheckController {
     @GetMapping("/test")
     public String test() {
         return "test!";
-    }}
+    }
+}
 
 
