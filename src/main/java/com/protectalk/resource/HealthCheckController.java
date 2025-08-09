@@ -9,4 +9,10 @@ public class HealthCheckController {
     public String sayHello() {
         return "Hello, world!";
     }
-}
+
+    @GetMapping("/test")
+    public String test() {
+        return "test!";
+    }}
+
+
