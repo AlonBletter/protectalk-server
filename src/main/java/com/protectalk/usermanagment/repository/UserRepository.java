@@ -1,9 +1,15 @@
-//package com.protectalk.usermanagment.repository;
-//
-//import com.protectalk.usermanagment.model.User;
-//import org.springframework.data.mongodb.repository.MongoRepository;
-//import java.util.Optional;
-//
-//public interface UserRepository extends MongoRepository<User, String> {
-//    Optional<User> findByPhoneNumber(String phoneNumber);
-//}
+package com.protectalk.usermanagment.repository;
+
+import com.protectalk.usermanagment.model.UserEntity;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends MongoRepository<UserEntity, String> {
+    Optional<UserEntity> findByPhoneNumber(String phoneNumber);
+    List<UserEntity> findByLinkedContactsPhoneNumber(String phoneNumber);
+
+}

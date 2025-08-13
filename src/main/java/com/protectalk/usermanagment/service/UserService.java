@@ -2,13 +2,13 @@ package com.protectalk.usermanagment.service;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
-import com.protectalk.usermanagment.dto.UserRequest;
+import com.protectalk.usermanagment.dto.UserRequestDto;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
 
-    public String createUser(UserRequest request) throws Exception {
+    public String createUser(UserRequestDto request) throws Exception {
         UserRecord.CreateRequest createRequest = new UserRecord.CreateRequest()
                 .setPhoneNumber(request.phoneNumber())
                 .setDisplayName(request.name());

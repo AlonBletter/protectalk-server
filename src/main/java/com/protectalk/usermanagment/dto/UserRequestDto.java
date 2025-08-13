@@ -1,6 +1,6 @@
 package com.protectalk.usermanagment.dto;
 
-public record UserRequest(
+public record UserRequestDto(
         String phoneNumber,
         String name,
         String dateOfBirth,

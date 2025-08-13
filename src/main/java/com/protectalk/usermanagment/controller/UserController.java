@@ -1,7 +1,7 @@
 package com.protectalk.usermanagment.controller;
 
 import com.google.firebase.auth.*;
-import com.protectalk.usermanagment.dto.UserRequest;
+import com.protectalk.usermanagment.dto.UserRequestDto;
 import com.protectalk.usermanagment.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -62,7 +62,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody UserRequest request) {
+    public ResponseEntity<String> registerUser(@RequestBody UserRequestDto request) {
         try {
             String uid = userService.createUser(request);
             return ResponseEntity.ok("User created with UID: " + uid);
