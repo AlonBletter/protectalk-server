@@ -1,13 +1,13 @@
-package com.protectalk.model;
+package com.protectalk.db.model;
 
-public class CallRecord {
+public class CallRecordEntity {
     private String userId;
     private String script;
 
     // Default constructor - required for Spring
-    public CallRecord() {}
+    public CallRecordEntity() {}
 
-    public CallRecord(String userId, String script) {
+    public CallRecordEntity(String userId, String script) {
         this.userId = userId;
         this.script = script;
     }

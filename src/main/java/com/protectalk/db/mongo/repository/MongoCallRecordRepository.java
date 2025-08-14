@@ -1,6 +1,6 @@
-package com.protectalk.repository;
+package com.protectalk.db.mongo.repository;
 
-import com.protectalk.model.CallRecord;
+import com.protectalk.db.model.CallRecordEntity;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoCollection;
@@ -23,7 +23,7 @@ public class MongoCallRecordRepository implements CallRecordRepository {
     }
 
     @Override
-    public void saveCallRecord(CallRecord record) {
+    public void saveCallRecord(CallRecordEntity record) {
         try {
             Document doc = new Document("userId", record.getUserId())
                     .append("script", record.getScript())
@@ -35,12 +35,12 @@ public class MongoCallRecordRepository implements CallRecordRepository {
     }
 
     @Override
-    public List<CallRecord> getCallRecords(String userId) {
-        List<CallRecord> results = new ArrayList<>();
+    public List<CallRecordEntity> getCallRecords(String userId) {
+        List<CallRecordEntity> results = new ArrayList<>();
         try {
             for (Document doc : collection.find(Filters.eq("userId", userId))) {
                 String script = doc.getString("script");
-                results.add(new CallRecord(userId, script));
+                results.add(new CallRecordEntity(userId, script));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve call records: " + e.getMessage(), e);
@@ -49,13 +49,13 @@ public class MongoCallRecordRepository implements CallRecordRepository {
     }
 
     @Override
-    public List<CallRecord> getAllCallRecords() {
-        List<CallRecord> results = new ArrayList<>();
+    public List<CallRecordEntity> getAllCallRecords() {
+        List<CallRecordEntity> results = new ArrayList<>();
         try {
             for (Document doc : collection.find()) {
                 String userId = doc.getString("userId");
                 String script = doc.getString("script");
-                results.add(new CallRecord(userId, script));
+                results.add(new CallRecordEntity(userId, script));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve all call records: " + e.getMessage(), e);

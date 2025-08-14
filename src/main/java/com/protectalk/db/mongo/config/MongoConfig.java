@@ -1,4 +1,4 @@
-package com.protectalk.config;
+package com.protectalk.db.mongo.config;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class MongoConfig {
 
     @Bean
-    public MongoClient mongoClient(@Value("${spring.data.mongodb.uri:mongodb://localhost:27017}") String mongoUri) {
+    public MongoClient mongoClient(@Value("${spring.data.mongodb.uri}") String mongoUri) {
         return MongoClients.create(mongoUri);
     }
 }
