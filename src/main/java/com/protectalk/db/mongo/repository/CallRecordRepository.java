@@ -1,14 +1,21 @@
 package com.protectalk.db.mongo.repository;
 
 import com.protectalk.db.model.CallRecordEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
 
 public interface CallRecordRepository extends MongoRepository<CallRecordEntity, String> {
-    void saveCallRecord(CallRecordEntity record);
-    List<CallRecordEntity> getCallRecords(String userId);
-    List<CallRecordEntity> getAllCallRecords();
-    void deleteCallRecord(String userId, String script);
-    long getRecordCount();
+
+    // fetch by owner
+    List<CallRecordEntity> findByUserId(String userId);
+
+    // optional: sorted/paged variants if you have createdAt
+    List<CallRecordEntity> findByUserIdOrderByCreatedAtDesc(String userId);
+    Page<CallRecordEntity> findByUserId(String userId, Pageable pageable);
+
+    // counts
+    long countByUserId(String userId);
 }
