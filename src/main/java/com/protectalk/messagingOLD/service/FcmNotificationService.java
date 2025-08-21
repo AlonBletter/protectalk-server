@@ -1,11 +1,11 @@
-package com.protectalk.messaging.service;
+package com.protectalk.messagingOLD.service;
 
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
-import com.protectalk.messaging.dto.NotificationRequestDto;
-import com.protectalk.messaging.dto.NotificationResponseDto;
+import com.protectalk.messagingOLD.dto.NotificationRequestDto;
+import com.protectalk.messagingOLD.dto.NotificationResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

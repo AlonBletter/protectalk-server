@@ -1,4 +1,4 @@
-package com.protectalk.messaging.config;
+package com.protectalk.messagingOLD.config;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;

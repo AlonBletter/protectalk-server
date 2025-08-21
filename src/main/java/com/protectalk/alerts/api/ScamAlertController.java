@@ -1,8 +1,9 @@
 package com.protectalk.alerts.api;
 
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.protectalk.alerts.dto.ScamAlertRequestDto;
 import com.protectalk.alerts.dto.ScamAlertResponseDto;
-import com.protectalk.alerts.service.AlertOrchestrator;
+import com.protectalk.alerts.service.AlertOrchestratorService;
 import com.protectalk.security.model.FirebasePrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/alerts")
 @RequiredArgsConstructor
 public class ScamAlertController {
-    private final AlertOrchestrator orchestrator;
+    private final AlertOrchestratorService orchestrator;
 
     @PostMapping
-    public ResponseEntity<ScamAlertResponseDto> create(
-            @AuthenticationPrincipal FirebasePrincipal me,
-            @RequestBody @Valid ScamAlertRequestDto req) {
+    public ResponseEntity<ScamAlertResponseDto> create(@AuthenticationPrincipal FirebasePrincipal me,
+                                                       @RequestBody @Valid ScamAlertRequestDto req)
+        throws FirebaseMessagingException {
         return ResponseEntity.ok(orchestrator.handle(me.uid(), req));
     }
 }

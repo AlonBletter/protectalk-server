@@ -1,8 +1,8 @@
-package com.protectalk.messaging.service;
+package com.protectalk.messagingOLD.service;
 
-import com.protectalk.messaging.dto.NotificationRequestDto;
-import com.protectalk.messaging.dto.ScamAlertPayload;
-import com.protectalk.messaging.event.ScamAlertEvent;
+import com.protectalk.messagingOLD.dto.NotificationRequestDto;
+import com.protectalk.messagingOLD.dto.ScamAlertPayload;
+import com.protectalk.messagingOLD.event.ScamAlertEvent;
 import org.springframework.stereotype.Component;
 
 @Component

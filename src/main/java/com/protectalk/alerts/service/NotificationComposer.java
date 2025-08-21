@@ -9,6 +9,12 @@ import java.util.Map;
 
 @Component
 public class NotificationComposer {
+    NotificationPort notificationPort;
+
+    public NotificationComposer(NotificationPort notificationPort) {
+        this.notificationPort = notificationPort;
+    }
+
     public NotificationPort.ComposedMessage compose(CallRecordPort.SavedCallRecord saved, List<String> tokens) {
         String title = switch (saved.risk()) {
             case RED -> "⚠️ High Scam Risk";
@@ -16,11 +22,11 @@ public class NotificationComposer {
             default -> "Info";
         };
         String body = "Suspicious call from " + saved.callerNumber();
-        Map<String,String> data = Map.of(
+        Map<String, String> data = Map.of(
                 "callId", saved.id(),
                 "riskLevel", saved.risk().name(),
                 "phoneNumber", saved.callerNumber()
         );
-        return new NotificationPort.ComposedMessage(tokens, title, body, data);
+        return new NotificationPort.ComposedMessage(title, body, data, tokens);
     }
 }

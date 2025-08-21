@@ -3,6 +3,7 @@ package com.protectalk.security.filter;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.auth.UserRecord;
 import com.protectalk.security.model.FirebasePrincipal;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,10 +39,11 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
             String idToken = header.substring(7);
             try {
                 FirebaseToken decoded = firebaseAuth.verifyIdToken(idToken, true);
+                UserRecord userRecord = firebaseAuth.getUser(decoded.getUid());
 
                 FirebasePrincipal principal = new FirebasePrincipal(
                         decoded.getUid(),
-                        decoded.getPhoneNumber(),
+                        userRecord.getPhoneNumber(),
                         decoded.getClaims()
                 );
 

@@ -1,4 +1,4 @@
-package com.protectalk.messaging.dto;
+package com.protectalk.messagingOLD.dto;
 
 public record NotificationRequestDto(
         String targetToken,   // FCM device token

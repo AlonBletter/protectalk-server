@@ -1,8 +1,8 @@
-package com.protectalk.messaging.controller;
+package com.protectalk.messagingOLD.controller;
 
-import com.protectalk.messaging.dto.NotificationRequestDto;
-import com.protectalk.messaging.dto.NotificationResponseDto;
-import com.protectalk.messaging.service.NotificationService;
+import com.protectalk.messagingOLD.dto.NotificationRequestDto;
+import com.protectalk.messagingOLD.dto.NotificationResponseDto;
+import com.protectalk.messagingOLD.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

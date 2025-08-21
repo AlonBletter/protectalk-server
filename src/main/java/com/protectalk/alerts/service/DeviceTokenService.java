@@ -1,7 +1,7 @@
 package com.protectalk.alerts.service;
 
-package com.protectalk.alerts;
-
+import com.protectalk.alerts.domain.DeviceToken;
+import com.protectalk.alerts.infra.DeviceTokenAdapter;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,32 +9,31 @@ import java.util.List;
 @Service
 public class DeviceTokenService {
 
-    private final DeviceTokenRepository tokenRepository;
+    private final DeviceTokenAdapter deviceTokenAdapter;
 
-    public DeviceTokenService(DeviceTokenRepository tokenRepository) {
-        this.tokenRepository = tokenRepository;
+    public DeviceTokenService(DeviceTokenAdapter tokenRepository) {
+        this.deviceTokenAdapter = tokenRepository;
     }
 
     /**
      * Save or update the FCM token for a given user & device.
      */
-    public void saveToken(String userId, String deviceId, String fcmToken) {
-        // upsert: if device already exists, update token
-        tokenRepository.saveOrUpdate(userId, deviceId, fcmToken);
+    public void register(DeviceToken deviceToken) {
+        deviceTokenAdapter.saveOrUpdate(deviceToken);
     }
 
     /**
      * Get all active tokens for a user (fan-out to multiple devices).
      */
-    public List<String> getTokensForUser(String userId) {
-        return tokenRepository.findTokensByUserId(userId);
+    public List<String> getTrustedContactsTokensForUser(String userId) {
+        return deviceTokenAdapter.findTokensByUserId(userId);
     }
 
     /**
      * Delete an invalid/expired token (after FCM says NotRegistered).
      */
     public void deleteToken(String fcmToken) {
-        tokenRepository.deleteByToken(fcmToken);
+        deviceTokenAdapter.deleteByToken(fcmToken);
     }
 }
 

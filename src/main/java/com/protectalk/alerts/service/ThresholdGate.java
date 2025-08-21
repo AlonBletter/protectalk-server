@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ThresholdGate {
-    @Value("${protectalk.threshold.score:0.75}") double minScore;
+    @Value("${protectalk.threshold.modelScore:0.75}") double minScore;
 
     public boolean allows(double score, RiskLevel level) {
         return level == RiskLevel.RED || score >= minScore;

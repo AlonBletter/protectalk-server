@@ -1,4 +1,4 @@
-package com.protectalk.messaging.exception;
+package com.protectalk.messagingOLD.exception;
 
 public class NotificationException extends RuntimeException {
     public NotificationException(String message, Throwable cause) {
