@@ -1,6 +1,6 @@
 package com.protectalk.alerts.service;
 
-import com.protectalk.alerts.domain.DeviceToken;
+import com.protectalk.db.model.DeviceTokenEntity;
 import com.protectalk.alerts.infra.DeviceTokenAdapter;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +18,8 @@ public class DeviceTokenService {
     /**
      * Save or update the FCM token for a given user & device.
      */
-    public void register(DeviceToken deviceToken) {
-        deviceTokenAdapter.saveOrUpdate(deviceToken);
+    public void register(DeviceTokenEntity deviceTokenEntity) {
+        deviceTokenAdapter.saveOrUpdate(deviceTokenEntity);
     }
 
     /**

@@ -1,17 +1,10 @@
 package com.protectalk.usermanagment.service;
 
-import com.protectalk.usermanagment.model.UserEntity;
-import com.protectalk.usermanagment.repository.UserRepository;
-import org.junit.jupiter.api.Test;
+import com.protectalk.db.mongo.repository.UserRepository;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserQueryServiceTest {

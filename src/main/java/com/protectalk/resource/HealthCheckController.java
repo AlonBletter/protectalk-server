@@ -1,10 +1,9 @@
 // 6. Enhanced Controller with Database Operations
 package com.protectalk.resource;
 
-import com.protectalk.db.model.CallRecordEntity;
 import com.protectalk.db.mongo.repository.CallRecordRepository;
 import com.protectalk.usermanagment.model.UserEntity;
-import com.protectalk.usermanagment.repository.UserRepository;
+import com.protectalk.db.mongo.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

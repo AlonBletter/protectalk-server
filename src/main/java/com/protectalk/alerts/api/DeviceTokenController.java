@@ -1,7 +1,7 @@
 package com.protectalk.alerts.api;
 
 import com.protectalk.alerts.service.DeviceTokenService;
-import com.protectalk.alerts.domain.DeviceToken;
+import com.protectalk.db.model.DeviceTokenEntity;
 import com.protectalk.security.model.FirebasePrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -17,12 +17,7 @@ public class DeviceTokenController {
 
     @PostMapping("/register")
     public void register(@AuthenticationPrincipal FirebasePrincipal me,
-                         @RequestBody DeviceToken deviceToken) {
-        deviceTokenService.register(deviceToken);
+                         @RequestBody DeviceTokenEntity deviceTokenEntity) {
+        deviceTokenService.register(deviceTokenEntity);
     }
-
-//    @DeleteMapping("/{token}")
-//    public void delete(@PathVariable String token) {
-//        service.removeInvalid(token);
-//    }
 }

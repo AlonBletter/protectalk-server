@@ -11,6 +11,7 @@ import java.util.List;
 @Repository
 public interface CallRecordRepository extends MongoRepository<CallRecordEntity, String> {
 
+
     // fetch by owner
     List<CallRecordEntity> findByUserId(String userId);
 

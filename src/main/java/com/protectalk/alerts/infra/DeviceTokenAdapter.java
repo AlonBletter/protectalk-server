@@ -1,6 +1,6 @@
 package com.protectalk.alerts.infra;
 
-import com.protectalk.alerts.domain.DeviceToken;
+import com.protectalk.db.model.DeviceTokenEntity;
 import com.protectalk.alerts.domain.Platform;
 import com.protectalk.alerts.port.DeviceTokenPort;
 import org.springframework.stereotype.Repository;
@@ -28,7 +28,7 @@ public class DeviceTokenAdapter {
                        long lastUpdatedEpochMs) {
 
         var doc = repo.findByUserIdAndDeviceId(userId, deviceId)
-                      .orElseGet(DeviceToken::new);
+                      .orElseGet(DeviceTokenEntity::new);
 
         doc.setUserId(userId);
         doc.setDeviceId(deviceId);
@@ -44,7 +44,7 @@ public class DeviceTokenAdapter {
     public List<String> findTokensByUserId(String userId) {
         return repo.findByUserId(userId)
                    .stream()
-                   .map(DeviceToken::getFcmToken)
+                   .map(DeviceTokenEntity::getFcmToken)
                    .toList();
     }
 
@@ -52,18 +52,18 @@ public class DeviceTokenAdapter {
         repo.deleteByFcmToken(fcmToken);
     }
 
-    public void saveOrUpdate(DeviceToken deviceToken) {
-        var existing = repo.findById(deviceToken.getId());
+    public void saveOrUpdate(DeviceTokenEntity deviceTokenEntity) {
+        var existing = repo.findById(deviceTokenEntity.getId());
         if (existing.isPresent()) {
-            DeviceToken existingToken = existing.get();
-            existingToken.setFcmToken(deviceToken.getFcmToken());
-            existingToken.setPlatform(deviceToken.getPlatform());
-            existingToken.setAppVersion(deviceToken.getAppVersion());
-            existingToken.setLastUpdated(deviceToken.getLastUpdated());
+            DeviceTokenEntity existingToken = existing.get();
+            existingToken.setFcmToken(deviceTokenEntity.getFcmToken());
+            existingToken.setPlatform(deviceTokenEntity.getPlatform());
+            existingToken.setAppVersion(deviceTokenEntity.getAppVersion());
+            existingToken.setLastUpdated(deviceTokenEntity.getLastUpdated());
             repo.save(existingToken);
         } else {
             // If not found, treat as new
-            repo.save(deviceToken);
+            repo.save(deviceTokenEntity);
         }
     }
 }

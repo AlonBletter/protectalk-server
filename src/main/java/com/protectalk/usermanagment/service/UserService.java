@@ -4,7 +4,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
 import com.protectalk.usermanagment.dto.UserRequestDto;
 import com.protectalk.usermanagment.model.UserEntity;
-import com.protectalk.usermanagment.repository.UserRepository;
+import com.protectalk.db.mongo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

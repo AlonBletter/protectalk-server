@@ -7,56 +7,83 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-/**
- * Adapter for sending notifications via Firebase Cloud Messaging (FCM).
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class FcmNotificationAdapter implements NotificationPort {
-    private static final Logger logger = LoggerFactory.getLogger(FcmNotificationAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(FcmNotificationAdapter.class);
     private final FirebaseMessaging fcm;
 
-    /**
-     * Sends a composed message to one or more device tokens using FCM.
-     * @param m the composed message
-     * @return message ID or batch result
-     * @throws FirebaseMessagingException if sending fails
-     */
     @Override
-    public String send(ComposedMessage m) throws FirebaseMessagingException {
-        if (m == null || m.tokens() == null || m.tokens().isEmpty()) {
-            logger.warn("No tokens provided for FCM notification");
+    public NotificationResult send(ComposedMessage m) throws FirebaseMessagingException {
+        if (m == null || m.tokens() == null || m.tokens().isEmpty())
             throw new IllegalArgumentException("No tokens provided");
-        }
-        if (m.title() == null || m.body() == null) {
-            logger.warn("Notification title or body is missing");
+        if (m.title() == null || m.body() == null)
             throw new IllegalArgumentException("Notification title or body is missing");
+
+        var notification = Notification.builder()
+                                       .setTitle(m.title())
+                                       .setBody(m.body())
+                                       .build();
+
+        // single
+        if (m.tokens().size() == 1) {
+            var msg = Message.builder()
+                             .setToken(m.tokens().get(0))
+                             .setNotification(notification)
+                             .putAllData(m.data() == null ? Map.of() : m.data())
+                             .build();
+
+            String messageId = fcm.send(msg);
+            var d = new Delivery(m.tokens().get(0), true, messageId, null, null);
+            return new NotificationResult(1, 1, 0, List.of(d), List.of());
         }
-        try {
-            var notification = Notification.builder().setTitle(m.title()).setBody(m.body()).build();
-            // send to single token
-            if (m.tokens().size() == 1) {
-                var message = Message.builder()
-                        .setToken(m.tokens().get(0))
-                        .setNotification(notification)
-                        .putAllData(m.data())
-                        .build();
-                String messageId = fcm.send(message);
-                logger.info("Sent FCM notification to single token: {}", m.tokens().get(0));
-                return messageId;
+
+        // multicast
+        var multi = MulticastMessage.builder()
+                                    .addAllTokens(m.tokens())
+                                    .setNotification(notification)
+                                    .putAllData(m.data() == null ? Map.of() : m.data())
+                                    .build();
+
+        var resp = fcm.sendEachForMulticast(multi);
+
+        var deliveries = new ArrayList<Delivery>(m.tokens().size());
+        var invalidTokens = new ArrayList<String>();
+
+        for (int i = 0; i < m.tokens().size(); i++) {
+            var token = m.tokens().get(i);
+            var r = resp.getResponses().get(i);
+
+            if (r.isSuccessful()) {
+                deliveries.add(new Delivery(token, true, r.getMessageId(), null, null));
             } else {
-                var multicastMessage = MulticastMessage.builder()
-                        .addAllTokens(m.tokens())
-                        .putAllData(m.data())
-                        .setNotification(notification)
-                        .build();
-                var resp = fcm.sendEachForMulticast(multicastMessage);
-                logger.info("Sent FCM notification to {} tokens, {} succeeded", m.tokens().size(), resp.getSuccessCount());
-                return "batch:" + resp.getSuccessCount();
+                var ex = r.getException(); // FirebaseMessagingException
+                var code = (ex != null && ex.getMessagingErrorCode() != null)
+                           ? ex.getMessagingErrorCode().name() : null;
+                var msg  = (ex != null) ? ex.getMessage() : "Unknown FCM error";
+                deliveries.add(new Delivery(token, false, null, code, msg));
+
+                // tokens to prune
+                if ("UNREGISTERED".equals(code) || "INVALID_ARGUMENT".equals(code)) {
+                    invalidTokens.add(token);
+                }
             }
-        } catch (FirebaseMessagingException e) {
-            logger.error("Error sending FCM notification", e);
-            throw e;
         }
+
+        log.info("FCM multicast: total={}, success={}, failure={}",
+                 resp.getResponses().size(), resp.getSuccessCount(),
+                 resp.getFailureCount());
+
+        return new NotificationResult(
+            resp.getResponses().size(),
+            resp.getSuccessCount(),
+            resp.getFailureCount(),
+            deliveries,
+            invalidTokens
+        );
     }
 }

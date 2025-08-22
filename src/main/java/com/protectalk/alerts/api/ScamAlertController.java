@@ -22,8 +22,7 @@ public class ScamAlertController {
 
     @PostMapping
     public ResponseEntity<ScamAlertResponseDto> create(@AuthenticationPrincipal FirebasePrincipal me,
-                                                       @RequestBody @Valid ScamAlertRequestDto req)
-        throws FirebaseMessagingException {
+                                                       @RequestBody @Valid ScamAlertRequestDto req) throws Exception {
         return ResponseEntity.ok(orchestrator.handle(me.uid(), req));
     }
 }
