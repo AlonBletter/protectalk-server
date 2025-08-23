@@ -1,6 +1,6 @@
 package com.protectalk.usermanagment.service;
 
-import com.protectalk.db.mongo.repository.UserRepository;
+import com.protectalk.usermanagment.repo.UserRepository;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;

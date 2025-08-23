@@ -1,7 +1,7 @@
 package com.protectalk.usermanagment.service;
 
 import com.protectalk.usermanagment.model.UserEntity;
-import com.protectalk.db.mongo.repository.UserRepository;
+import com.protectalk.usermanagment.repo.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
