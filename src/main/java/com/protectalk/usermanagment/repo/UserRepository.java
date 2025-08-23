@@ -1,4 +1,4 @@
-package com.protectalk.usermanagment.repository;
+package com.protectalk.usermanagment.repo;
 
 import com.protectalk.usermanagment.model.UserEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;

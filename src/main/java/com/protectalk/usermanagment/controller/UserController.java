@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RestController
 public class UserController {
     private final UserService userService;
@@ -21,27 +21,27 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/auth/validate-token")
-    public ResponseEntity<?> validateToken(@RequestBody Map<String, String> body) {
-        String idToken = body.get("idToken");
-        if (idToken == null || idToken.isEmpty()) {
-            return ResponseEntity.badRequest().body("idToken must be provided");
-        }
-        try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-            String uid = decodedToken.getUid();
-            String phoneNumber = decodedToken.getClaims().get("phone_number") != null
-                    ? decodedToken.getClaims().get("phone_number").toString()
-                    : null;
-
-            return ResponseEntity.ok(Map.of(
-                    "uid", uid,
-                    "phoneNumber", phoneNumber
-            ));
-        } catch (FirebaseAuthException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid ID token");
-        }
-    }
+//    @PostMapping("/auth/validate-token")
+//    public ResponseEntity<?> validateToken(@RequestBody Map<String, String> body) {
+//        String idToken = body.get("idToken");
+//        if (idToken == null || idToken.isEmpty()) {
+//            return ResponseEntity.badRequest().body("idToken must be provided");
+//        }
+//        try {
+//            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+//            String uid = decodedToken.getUid();
+//            String phoneNumber = decodedToken.getClaims().get("phone_number") != null
+//                    ? decodedToken.getClaims().get("phone_number").toString()
+//                    : null;
+//
+//            return ResponseEntity.ok(Map.of(
+//                    "uid", uid,
+//                    "phoneNumber", phoneNumber
+//            ));
+//        } catch (FirebaseAuthException e) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid ID token");
+//        }
+//    }
 
     @GetMapping("/list")
     public List<Map<String, String>> listUsers() throws Exception {

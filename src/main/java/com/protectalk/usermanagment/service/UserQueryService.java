@@ -1,8 +1,7 @@
 package com.protectalk.usermanagment.service;
 
-import com.google.firebase.remoteconfig.User;
 import com.protectalk.usermanagment.model.UserEntity;
-import com.protectalk.usermanagment.repository.UserRepository;
+import com.protectalk.usermanagment.repo.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
