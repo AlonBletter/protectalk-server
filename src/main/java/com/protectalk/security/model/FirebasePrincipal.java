@@ -3,7 +3,7 @@ package com.protectalk.security.model;
 import java.util.Map;
 
 public record FirebasePrincipal(String uid,
-                                String phoneNumber,
+                                String email,
                                 Map<String, Object> claims) {
 
     public boolean hasRole(String role) {

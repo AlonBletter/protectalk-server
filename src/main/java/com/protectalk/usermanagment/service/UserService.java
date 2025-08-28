@@ -2,6 +2,8 @@ package com.protectalk.usermanagment.service;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.UserRecord;
+import com.protectalk.device.service.DeviceTokenService;
+import com.protectalk.usermanagment.dto.CompleteRegistrationRequestDto;
 import com.protectalk.usermanagment.dto.UserRequestDto;
 import com.protectalk.usermanagment.model.UserEntity;
 import com.protectalk.usermanagment.repo.UserRepository;
@@ -16,6 +18,7 @@ public class UserService {
 
     private final UserRepository userRepository;        // Mongo repository for UserEntity
     private final FirebaseAuth firebaseAuth;  // Injected once (configure in a @Configuration bean)
+    private final DeviceTokenService deviceTokenService;
 
     public String createUser(UserRequestDto req) throws Exception {
         assertUniquePhone(req.phoneNumber());
@@ -29,6 +32,40 @@ public class UserService {
             safeDeleteFirebaseUser(fbUser.getUid());
             throw ex;
         }
+    }
+
+    /**
+     * Create or update user profile after client-side Firebase registration
+     */
+    public void createOrUpdateProfile(String firebaseUid, UserRequestDto req) {
+        UserEntity entity = userRepository.findByFirebaseUid(firebaseUid)
+                .orElse(UserEntity.builder()
+                        .firebaseUid(firebaseUid)
+                        .build());
+
+        entity.setPhoneNumber(req.phoneNumber());
+        entity.setName(req.name());
+
+        userRepository.save(entity);
+    }
+
+    /**
+     * Complete registration after client-side Firebase registration
+     * Handles both user profile creation and device token registration
+     */
+    public void completeRegistration(String firebaseUid, CompleteRegistrationRequestDto request) {
+        // 1. Create or update user profile
+        UserEntity entity = userRepository.findByFirebaseUid(firebaseUid)
+                .orElse(UserEntity.builder()
+                        .firebaseUid(firebaseUid)
+                        .build());
+
+        entity.setPhoneNumber(request.phoneNumber());
+        entity.setName(request.name());
+        userRepository.save(entity);
+
+        // 2. Register device token using existing device service
+        deviceTokenService.register(firebaseUid, request.registerTokenRequest());
     }
 
     // ---- helpers ----
@@ -51,15 +88,6 @@ public class UserService {
         entity.setFirebaseUid(firebaseUid);
         entity.setPhoneNumber(req.phoneNumber());
         entity.setName(req.name());
-        entity.setDateOfBirth(req.dateOfBirth());
-        entity.setUserType(req.userType());
-        if (req.linkedContactPhone() != null) {
-            entity.setLinkedContacts(List.of(new UserEntity.LinkedContact(
-                    req.linkedContactPhone(),
-                    req.linkedContactName(),
-                    req.relationship()
-            )));
-        }
         return entity;
     }
 
@@ -71,4 +99,3 @@ public class UserService {
         }
     }
 }
-

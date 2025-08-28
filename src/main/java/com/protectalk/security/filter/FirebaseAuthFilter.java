@@ -43,7 +43,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
                 FirebasePrincipal principal = new FirebasePrincipal(
                         decoded.getUid(),
-                        userRecord.getPhoneNumber(),
+                        userRecord != null ? userRecord.getEmail() : decoded.getEmail(),
                         decoded.getClaims()
                 );
 
@@ -55,8 +55,38 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (FirebaseAuthException e) {
+                System.err.println("Firebase token verification failed: " + e.getMessage());
+                System.err.println("Error code: " + e.getAuthErrorCode());
+                System.err.println("Error details: " + e.getErrorCode());
+
+                // Provide specific guidance based on error type
+                if (e.getAuthErrorCode() != null) {
+                    switch (e.getAuthErrorCode().toString()) {
+                        case "INVALID_ARGUMENT":
+                            System.err.println("HINT: Token format is invalid. Check if you're sending the correct Firebase ID token.");
+                            break;
+                        case "EXPIRED_ID_TOKEN":
+                            System.err.println("HINT: Token has expired. Get a fresh token from your client.");
+                            break;
+                        case "REVOKED_ID_TOKEN":
+                            System.err.println("HINT: Token has been revoked. User needs to re-authenticate.");
+                            break;
+                        case "INVALID_ID_TOKEN":
+                            System.err.println("HINT: Token signature/format is invalid. Check project ID mismatch.");
+                            break;
+                    }
+                }
+
                 SecurityContextHolder.clearContext();
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Invalid Firebase token: " + e.getMessage() + "\"}");
+                response.setContentType("application/json");
+                return;
+            } catch (Exception e) {
+                System.err.println("Unexpected error during token verification: " + e.getMessage());
+                e.printStackTrace();
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;
             }
         }

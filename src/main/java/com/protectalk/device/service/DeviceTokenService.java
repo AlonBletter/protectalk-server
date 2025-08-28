@@ -1,5 +1,6 @@
 package com.protectalk.device.service;
 
+import com.protectalk.device.dto.DeviceTokenRequestDto;
 import com.protectalk.device.model.DeviceTokenEntity;
 import com.protectalk.device.repo.DeviceTokenRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,22 @@ import java.util.List;
 public class DeviceTokenService {
 
     private final DeviceTokenRepository repo;
+
+    /**
+     * Save or update the FCM token for a given user & device using DTO.
+     */
+    public void register(String userId, DeviceTokenRequestDto request) {
+        DeviceTokenEntity entity = DeviceTokenEntity.builder()
+                .userId(userId)
+                .deviceId(request.getDeviceId())
+                .fcmToken(request.getFcmToken())
+                .platform(request.getPlatform())
+                .appVersion(request.getAppVersion())
+                .lastUpdated(System.currentTimeMillis())
+                .build();
+
+        register(entity);
+    }
 
     /**
      * Save or update the FCM token for a given user & device.
