@@ -25,6 +25,7 @@ public interface ContactRequestRepository extends MongoRepository<ContactRequest
 
     // Find all requests made by a specific user
     List<ContactRequestEntity> findByRequesterUid(String requesterUid);
+    List<ContactRequestEntity> findByRequesterUidAndStatus(String requesterUid, ContactRequestEntity.RequestStatus status);
 
     // Check if a request already exists between two users for a specific contact type
     Optional<ContactRequestEntity> findByRequesterUidAndTargetPhoneNumberAndContactType(

@@ -1,0 +1,58 @@
+package com.protectalk.usermanagment.dto;
+
+import com.protectalk.usermanagment.model.ContactRequestEntity;
+import com.protectalk.usermanagment.model.UserEntity;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class UserProfileResponseDto {
+
+    // Basic user information
+    private String firebaseUid;
+    private String name;
+    private String phoneNumber;
+    private String userType;
+    private Instant createdAt;
+
+    // Contact relationships
+    private List<LinkedContactDto> linkedContacts;
+
+    // Pending requests (both sent and received)
+    private List<ContactRequestDto> pendingReceivedRequests;
+    private List<ContactRequestDto> pendingSentRequests;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class LinkedContactDto {
+        private String phoneNumber;
+        private String name;
+        private String relationship;
+        private String contactType; // TRUSTED_CONTACT or PROTEGEE
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ContactRequestDto {
+        private String id;
+        private String requesterName;
+        private String targetPhoneNumber;
+        private String relationship;
+        private String contactType;
+        private String status;
+        private Instant createdAt;
+        private boolean isIncoming; // true if this user is the target, false if requester
+    }
+}

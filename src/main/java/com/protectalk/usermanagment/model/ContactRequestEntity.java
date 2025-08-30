@@ -45,6 +45,8 @@ public class ContactRequestEntity {
 
     private Instant respondedAt;        // When the request was approved/denied
 
+    private Instant deletedAt;
+
     public enum RequestStatus {
         PENDING,
         APPROVED,

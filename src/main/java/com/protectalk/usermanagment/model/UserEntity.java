@@ -30,7 +30,6 @@ public class UserEntity {
     private String firebaseUid;          // Link to Firebase user
 
     private String name;
-    private String dateOfBirth;          // keep as String to match current service; can switch to LocalDate later
     private String userType;             // Protegee / TrustedContact / Both
 
     private List<LinkedContact> linkedContacts;
@@ -41,6 +40,8 @@ public class UserEntity {
 
     @LastModifiedDate
     private Instant updatedAt;
+
+    private Instant deletedAt;
 
     public record LinkedContact(String phoneNumber, String name, String relationship) {}
 }
