@@ -94,7 +94,8 @@ public class DeviceTokenService {
     /**
      * Get all active tokens for a user (fan-out to multiple devices).
      */
-    public List<String> getTrustedContactsTokensForUser(String userId) {
+    public List<String> getDeviceTokensForUser(String userId) {
+        log.debug("Getting device tokens for user: {}", userId);
         return repo.findByUserId(userId).stream()
                    .map(DeviceTokenEntity::getFcmToken)
                    .toList();

@@ -43,5 +43,5 @@ public class UserEntity {
 
     private Instant deletedAt;
 
-    public record LinkedContact(String phoneNumber, String name, String relationship) {}
+    public record LinkedContact(String phoneNumber, String name, String relationship, ContactType contactType) {}
 }

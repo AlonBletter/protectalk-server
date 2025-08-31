@@ -11,6 +11,7 @@ import com.protectalk.usermanagment.model.ContactRequestEntity;
 import com.protectalk.usermanagment.service.ContactRequestService;
 import com.protectalk.usermanagment.service.UserService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,43 +26,10 @@ import java.util.Map;
 @Slf4j
 @RequestMapping("/api/users")
 @RestController
+@RequiredArgsConstructor
 public class UserController {
     private final UserService           userService;
     private final ContactRequestService contactRequestService;
-
-    public UserController(UserService userService, ContactRequestService contactRequestService) {
-        this.userService = userService;
-        this.contactRequestService = contactRequestService;
-    }
-
-//    @GetMapping("/list")
-//    public List<Map<String, String>> listUsers() throws Exception {
-//        List<Map<String, String>> result = new ArrayList<>();
-//
-//        ListUsersPage page = FirebaseAuth.getInstance().listUsers(null);
-//        while (page != null) {
-//            for (ExportedUserRecord user : page.getValues()) {
-//                Map<String, String> userInfo = new HashMap<>();
-//                userInfo.put("uid", user.getUid());
-//                userInfo.put("phoneNumber", user.getPhoneNumber());
-//                result.add(userInfo);
-//            }
-//            page = page.getNextPage();
-//        }
-//
-//        return result;
-//    }
-
-//    @PostMapping("/register")
-//    public ResponseEntity<String> registerUser(@RequestBody UserRequestDto request) {
-//        try {
-//            String uid = userService.createUser(request);
-//            return ResponseEntity.ok("User created with UID: " + uid);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body("Error: " + e.getMessage());
-//        }
-//    }
 
     @PostMapping("/contact-request")
     public ResponseEntity<String> sendContactRequest(

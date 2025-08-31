@@ -10,6 +10,7 @@ import com.protectalk.messaging.NotificationComposer;
 import com.protectalk.device.service.DeviceTokenService;
 import com.protectalk.messaging.NotificationGateway;
 import com.protectalk.messaging.NotificationResult;
+import com.protectalk.usermanagment.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -21,20 +22,22 @@ import java.util.List;
 public class ScamAlertService {
     private static final Logger log = LoggerFactory.getLogger(ScamAlertService.class);
 
-    private final double minModelScore;
-    private final ScamAlertRepository scamAlertRepository;  // persistence
+    private final double               minModelScore;
+    private final ScamAlertRepository  scamAlertRepository;  // persistence
     private final DeviceTokenService   deviceTokenService;    // token resolution & cleanup
+    private final UserService          userService;
     private final NotificationGateway  notifierGateway;        // FCM (or other) adapter
     private final NotificationComposer notificationComposer;        // builds notification payload/message
 
     public ScamAlertService(@Value("${protectalk.threshold.modelScore:0.75}") double minModelScore,
                             ScamAlertRepository scamAlertRepository, DeviceTokenService deviceTokenService,
-                            NotificationGateway notifier, NotificationGateway notifierGateway, NotificationComposer notificationComposer) {
+                            NotificationGateway notifier, UserService userService, NotificationGateway notifierGateway, NotificationComposer notificationComposer) {
         this.minModelScore = minModelScore; // immutable after wiring
         this.scamAlertRepository = scamAlertRepository;
         this.deviceTokenService = deviceTokenService;
-        this.notifierGateway = notifierGateway;
+        this.userService = userService;
         this.notificationComposer = notificationComposer;
+        this.notifierGateway = notifierGateway;
     }
 
     private boolean isModelScorePassesThreshold(double score, RiskLevel level) {
@@ -57,7 +60,7 @@ public class ScamAlertService {
         var savedAlertRecordEntity = scamAlertRepository.save(AlertRecordEntity.from(userId, req));
 
         // 3) Resolve targets (trusted contacts + owner if desired) -> list of FCM tokens
-        List<String> tokens = deviceTokenService.getTrustedContactsTokensForUser(userId);
+        List<String> tokens = userService.getTrustedContactTokens(userId);
         if (tokens == null || tokens.isEmpty()) {
             // No tokens available to notify (e.g., no trusted contacts or no registered devices)
             return ScamAlertResponseDto.noContacts(savedAlertRecordEntity.getId());

@@ -1,7 +1,5 @@
 package com.protectalk.usermanagment.dto;
 
-import com.protectalk.usermanagment.model.ContactRequestEntity;
-import com.protectalk.usermanagment.model.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -46,7 +44,6 @@ public class UserProfileResponseDto {
     @AllArgsConstructor
     @Builder
     public static class ContactRequestDto {
-        private String id;
         private String requesterName;
         private String targetPhoneNumber;
         private String relationship;

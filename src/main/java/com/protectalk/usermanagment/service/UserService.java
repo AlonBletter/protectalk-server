@@ -5,6 +5,7 @@ import com.google.firebase.auth.UserRecord;
 import com.protectalk.device.service.DeviceTokenService;
 import com.protectalk.usermanagment.dto.CompleteRegistrationRequestDto;
 import com.protectalk.usermanagment.dto.UserRequestDto;
+import com.protectalk.usermanagment.model.ContactType;
 import com.protectalk.usermanagment.model.UserEntity;
 import com.protectalk.usermanagment.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,23 +26,6 @@ public class UserService {
     private final FirebaseAuth firebaseAuth;  // Injected once (configure in a @Configuration bean)
     private final DeviceTokenService deviceTokenService;
     private final ContactRequestRepository contactRequestRepository;
-
-    public String createUser(UserRequestDto req) throws Exception {
-        log.info("Creating user with phone number: {}", req.phoneNumber());
-        assertUniquePhone(req.phoneNumber());
-
-        UserRecord fbUser = createFirebaseUser(req);
-        try {
-            UserEntity entity = toEntity(req, fbUser.getUid());
-            userRepository.save(entity);
-            log.info("Successfully created user with UID: {} and phone: {}", fbUser.getUid(), req.phoneNumber());
-            return fbUser.getUid();
-        } catch (RuntimeException ex) {
-            log.error("Failed to save user entity for UID: {}, deleting Firebase user", fbUser.getUid(), ex);
-            safeDeleteFirebaseUser(fbUser.getUid());
-            throw ex;
-        }
-    }
 
     /**
      * Create or update user profile after client-side Firebase registration
@@ -101,7 +85,7 @@ public class UserService {
                                 .phoneNumber(contact.phoneNumber())
                                 .name(contact.name())
                                 .relationship(contact.relationship())
-                                .contactType("LINKED") // You might want to determine actual type
+                                .contactType(contact.contactType().name()) // You might want to determine actual type
                                 .build())
                         .toList() : List.of();
 
@@ -111,7 +95,6 @@ public class UserService {
                         com.protectalk.usermanagment.model.ContactRequestEntity.RequestStatus.PENDING)
                 .stream()
                 .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
-                        .id(req.getId())
                         .requesterName(req.getRequesterName())
                         .targetPhoneNumber(req.getTargetPhoneNumber())
                         .relationship(req.getRelationship())
@@ -128,7 +111,6 @@ public class UserService {
                         com.protectalk.usermanagment.model.ContactRequestEntity.RequestStatus.PENDING)
                 .stream()
                 .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
-                        .id(req.getId())
                         .requesterName(req.getRequesterName())
                         .targetPhoneNumber(req.getTargetPhoneNumber())
                         .relationship(req.getRelationship())
@@ -154,6 +136,57 @@ public class UserService {
                 firebaseUid, linkedContacts.size(), receivedRequests.size(), sentRequests.size());
 
         return profile;
+    }
+
+    /**
+     * Get FCM tokens for trusted contacts of a user (people who should receive alerts from this user)
+     */
+    public List<String> getTrustedContactTokens(String userId) {
+        return getContactTokensByType(userId, ContactType.TRUSTED_CONTACT);
+    }
+
+    /**
+     * Get FCM tokens for protegees of a user (people this user protects)
+     */
+    public List<String> getProtegeeTokens(String userId) {
+        return getContactTokensByType(userId, ContactType.PROTEGEE);
+    }
+
+    /**
+     * Generic method to get FCM tokens for contacts of a specific type
+     */
+    private List<String> getContactTokensByType(String userId, ContactType contactType) {
+        log.debug("Getting {} tokens for user: {}", contactType, userId);
+
+        return userRepository.findByFirebaseUid(userId)
+                .map(user -> {
+                    if (user.getLinkedContacts() == null) {
+                        return List.<String>of();
+                    }
+
+                    // Get phone numbers of contacts with the specified type
+                    List<String> contactPhones = user.getLinkedContacts().stream()
+                            .filter(contact -> contact.contactType() == contactType)
+                            .map(UserEntity.LinkedContact::phoneNumber)
+                            .toList();
+
+                    if (contactPhones.isEmpty()) {
+                        log.debug("No {} contacts found for user: {}", contactType, userId);
+                        return List.<String>of();
+                    }
+
+                    // Get FCM tokens for each contact
+                    List<String> tokens = contactPhones.stream()
+                            .flatMap(phone -> userRepository.findByPhoneNumber(phone)
+                                    .map(contact -> deviceTokenService.getDeviceTokensForUser(contact.getFirebaseUid()).stream())
+                                    .orElse(java.util.stream.Stream.empty()))
+                            .toList();
+
+                    log.debug("Found {} FCM tokens for {} {} contacts of user: {}",
+                             tokens.size(), contactPhones.size(), contactType, userId);
+                    return tokens;
+                })
+                .orElse(List.of());
     }
 
     // ---- helpers ----
