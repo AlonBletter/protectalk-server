@@ -44,12 +44,12 @@ public class UserProfileResponseDto {
     @AllArgsConstructor
     @Builder
     public static class ContactRequestDto {
+        private String id;
         private String requesterName;
         private String targetPhoneNumber;
         private String relationship;
         private String contactType;
         private String status;
         private Instant createdAt;
-        private boolean isIncoming; // true if this user is the target, false if requester
     }
 }

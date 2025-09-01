@@ -25,8 +25,10 @@ public class ContactRequestService {
     // Notification constants
     private static final String NOTIFICATION_TYPE_APPROVED    = "contact_request_approved";
     private static final String NOTIFICATION_TYPE_DENIED      = "contact_request_denied";
+    private static final String NOTIFICATION_TYPE_RECEIVED    = "contact_request_received";
     private static final String NOTIFICATION_TITLE_APPROVED   = "Request Approved";
     private static final String NOTIFICATION_TITLE_DENIED     = "Request Denied";
+    private static final String NOTIFICATION_TITLE_RECEIVED   = "New Contact Request";
     private static final String CONTACT_TYPE_DISPLAY_TRUSTED  = "trusted contact";
     private static final String CONTACT_TYPE_DISPLAY_PROTEGEE = "protegee";
     private static final String DEFAULT_USER_NAME             = "Someone";
@@ -39,6 +41,7 @@ public class ContactRequestService {
     private static final String DATA_KEY_CONTACT_TYPE        = "contactType";
     private static final String DATA_KEY_APPROVING_USER_NAME = "approvingUserName";
     private static final String DATA_KEY_DENYING_USER_NAME   = "denyingUserName";
+    private static final String DATA_KEY_REQUESTER_NAME      = "requesterName";
     private static final String DATA_KEY_TARGET_PHONE_NUMBER = "targetPhoneNumber";
 
     // Relationship mappings
@@ -50,6 +53,7 @@ public class ContactRequestService {
     // Log message types
     private static final String LOG_TYPE_APPROVAL = "approval";
     private static final String LOG_TYPE_DENIAL   = "denial";
+    private static final String LOG_TYPE_RECEIVED = "received";
 
     private final ContactRequestRepository requestRepository;
     private final UserRepository           userRepository;
@@ -96,6 +100,11 @@ public class ContactRequestService {
         requestRepository.save(request);
         log.info("Successfully created {} request from {} to {}", requestDto.contactType(), requesterName,
                  requestDto.phoneNumber());
+
+        // Send push notification to the target user if they are registered
+        if (targetUid != null) {
+            sendReceivedNotification(request);
+        }
     }
 
     /**
@@ -303,6 +312,61 @@ public class ContactRequestService {
                    DATA_KEY_DENYING_USER_NAME, denyingUserName, DATA_KEY_TARGET_PHONE_NUMBER, request.getTargetPhoneNumber());
 
         sendNotificationToRequester(request, NOTIFICATION_TITLE_DENIED, body, data, LOG_TYPE_DENIAL);
+    }
+
+    /**
+     * Send push notification to target user when they receive a new contact request
+     */
+    private void sendReceivedNotification(ContactRequestEntity request) {
+        String contactTypeDisplay = request.getContactType() == ContactType.TRUSTED_CONTACT ?
+                CONTACT_TYPE_DISPLAY_TRUSTED : CONTACT_TYPE_DISPLAY_PROTEGEE;
+
+        String title = NOTIFICATION_TITLE_RECEIVED;
+        String body = String.format("%s wants to add you as their %s",
+                request.getRequesterName(), contactTypeDisplay);
+
+        Map<String, String> data = Map.of(
+                DATA_KEY_TYPE, NOTIFICATION_TYPE_RECEIVED,
+                DATA_KEY_REQUEST_ID, request.getId(),
+                DATA_KEY_CONTACT_TYPE, request.getContactType().toString(),
+                DATA_KEY_REQUESTER_NAME, request.getRequesterName(),
+                DATA_KEY_TARGET_PHONE_NUMBER, request.getTargetPhoneNumber()
+        );
+
+        sendNotificationToTarget(request, title, body, data, LOG_TYPE_RECEIVED);
+    }
+
+    /**
+     * Generic method to send push notification to the target user
+     */
+    private void sendNotificationToTarget(ContactRequestEntity request, String title, String body,
+                                        Map<String, String> data, String notificationType) {
+        try {
+            // Get target user's device tokens
+            List<String> tokens = deviceTokenService.getDeviceTokensForUser(request.getTargetUid());
+
+            if (tokens.isEmpty()) {
+                log.warn("No device tokens found for target UID: {}", request.getTargetUid());
+                return;
+            }
+
+            OutboundMessage message = new OutboundMessage(title, body, data, tokens);
+            var result = notificationGateway.send(message);
+
+            log.info("Sent {} notification to target UID: {} - success: {}, failure: {}",
+                    notificationType, request.getTargetUid(), result.success(), result.failure());
+
+            // Clean up invalid tokens if any
+            if (!result.invalidTokens().isEmpty()) {
+                log.info("Cleaning up {} invalid tokens for target UID: {}",
+                        result.invalidTokens().size(), request.getTargetUid());
+                result.invalidTokens().forEach(deviceTokenService::deleteToken);
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to send {} notification for request: {}", notificationType, request.getId(), e);
+            // Don't throw - request processing should succeed even if notification fails
+        }
     }
 
     /**

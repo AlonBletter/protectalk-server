@@ -95,13 +95,13 @@ public class UserService {
                         com.protectalk.usermanagment.model.ContactRequestEntity.RequestStatus.PENDING)
                 .stream()
                 .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
+                        .id(req.getId())
                         .requesterName(req.getRequesterName())
                         .targetPhoneNumber(req.getTargetPhoneNumber())
                         .relationship(req.getRelationship())
                         .contactType(req.getContactType().toString())
                         .status(req.getStatus().toString())
                         .createdAt(req.getCreatedAt())
-                        .isIncoming(true)
                         .build())
                 .toList();
 
@@ -111,13 +111,13 @@ public class UserService {
                         com.protectalk.usermanagment.model.ContactRequestEntity.RequestStatus.PENDING)
                 .stream()
                 .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
+                        .id(req.getId())
                         .requesterName(req.getRequesterName())
                         .targetPhoneNumber(req.getTargetPhoneNumber())
                         .relationship(req.getRelationship())
                         .contactType(req.getContactType().toString())
                         .status(req.getStatus().toString())
                         .createdAt(req.getCreatedAt())
-                        .isIncoming(false)
                         .build())
                 .toList();
 
