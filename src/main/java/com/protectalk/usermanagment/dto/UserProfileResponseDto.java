@@ -45,6 +45,8 @@ public class UserProfileResponseDto {
     @Builder
     public static class ContactRequestDto {
         private String id;
+        private String requesterPhoneNumber; // Phone number of the person making the request
+        private String requesterName;       // Name of the person making the request
         private String targetPhoneNumber;
         private String targetName;          // Name of the target person
         private String relationship;

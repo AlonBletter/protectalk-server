@@ -96,15 +96,24 @@ public class UserService {
         List<UserProfileResponseDto.ContactRequestDto> receivedRequests =
                 contactRequestRepository.findByTargetUidAndStatus(firebaseUid, ContactRequestEntity.RequestStatus.PENDING)
                 .stream()
-                .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
-                        .id(req.getId())
-                        .targetPhoneNumber(req.getTargetPhoneNumber())
-                        .targetName(req.getTargetName())
-                        .relationship(req.getRelationship())
-                        .contactType(req.getContactType().toString())
-                        .status(req.getStatus().toString())
-                        .createdAt(req.getCreatedAt())
-                        .build())
+                .map(req -> {
+                    // Get requester's phone number from their UID
+                    String requesterPhoneNumber = userRepository.findByFirebaseUid(req.getRequesterUid())
+                            .map(UserEntity::getPhoneNumber)
+                            .orElse("Unknown");
+
+                    return UserProfileResponseDto.ContactRequestDto.builder()
+                            .id(req.getId())
+                            .requesterPhoneNumber(requesterPhoneNumber)
+                            .requesterName(req.getRequesterName())
+                            .targetPhoneNumber(req.getTargetPhoneNumber())
+                            .targetName(req.getTargetName())
+                            .relationship(req.getRelationship())
+                            .contactType(req.getContactType().toString())
+                            .status(req.getStatus().toString())
+                            .createdAt(req.getCreatedAt())
+                            .build();
+                })
                 .toList();
 
         // Get pending sent requests (where this user is the requester)
@@ -112,15 +121,24 @@ public class UserService {
                 contactRequestRepository.findByRequesterUidAndStatus(firebaseUid,
                         com.protectalk.usermanagment.model.ContactRequestEntity.RequestStatus.PENDING)
                 .stream()
-                .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
-                        .id(req.getId())
-                        .targetPhoneNumber(req.getTargetPhoneNumber())
-                        .targetName(req.getTargetName())
-                        .relationship(req.getRelationship())
-                        .contactType(req.getContactType().toString())
-                        .status(req.getStatus().toString())
-                        .createdAt(req.getCreatedAt())
-                        .build())
+                .map(req -> {
+                    // Get requester's phone number from their UID (should be the current user's phone)
+                    String requesterPhoneNumber = userRepository.findByFirebaseUid(req.getRequesterUid())
+                            .map(UserEntity::getPhoneNumber)
+                            .orElse("Unknown");
+
+                    return UserProfileResponseDto.ContactRequestDto.builder()
+                            .id(req.getId())
+                            .requesterPhoneNumber(requesterPhoneNumber)
+                            .requesterName(req.getRequesterName())
+                            .targetPhoneNumber(req.getTargetPhoneNumber())
+                            .targetName(req.getTargetName())
+                            .relationship(req.getRelationship())
+                            .contactType(req.getContactType().toString())
+                            .status(req.getStatus().toString())
+                            .createdAt(req.getCreatedAt())
+                            .build();
+                })
                 .toList();
 
         UserProfileResponseDto profile = UserProfileResponseDto.builder()
