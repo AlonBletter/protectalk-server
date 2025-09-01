@@ -17,7 +17,10 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@CompoundIndex(name = "requester_target_type_unique", def = "{'requesterUid': 1, 'targetPhoneNumber': 1, 'contactType': 1}", unique = true)
+// Remove the unique constraint and add regular indexes for performance
+@CompoundIndex(name = "requester_target_type_idx", def = "{'requesterUid': 1, 'targetPhoneNumber': 1, 'contactType': 1}")
+@CompoundIndex(name = "target_status_idx", def = "{'targetPhoneNumber': 1, 'status': 1}")
+@CompoundIndex(name = "requester_status_idx", def = "{'requesterUid': 1, 'status': 1}")
 public class ContactRequestEntity {
 
     @Id
@@ -30,6 +33,8 @@ public class ContactRequestEntity {
 
     @Indexed
     private String targetPhoneNumber;   // Phone number of the person being requested
+
+    private String targetName;          // Name of the target person (provided by requester)
 
     private String targetUid;           // Firebase UID of target (if they're registered), null if not found
 
@@ -51,6 +56,7 @@ public class ContactRequestEntity {
         PENDING,
         APPROVED,
         DENIED,
-        EXPIRED
+        EXPIRED,
+        CANCELED
     }
 }

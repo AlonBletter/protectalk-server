@@ -3,7 +3,7 @@ package com.protectalk.usermanagment.service;
 import com.protectalk.device.service.DeviceTokenService;
 import com.protectalk.messaging.NotificationGateway;
 import com.protectalk.messaging.OutboundMessage;
-import com.protectalk.usermanagment.dto.ContactRequestDto;
+import com.protectalk.usermanagment.dto.AddContactRequestDto;
 import com.protectalk.usermanagment.model.ContactType;
 import com.protectalk.usermanagment.model.ContactRequestEntity;
 import com.protectalk.usermanagment.model.UserEntity;
@@ -54,6 +54,7 @@ public class ContactRequestService {
     private static final String LOG_TYPE_APPROVAL = "approval";
     private static final String LOG_TYPE_DENIAL   = "denial";
     private static final String LOG_TYPE_RECEIVED = "received";
+    private static final String LOG_TYPE_CANCEL   = "cancel";
 
     private final ContactRequestRepository requestRepository;
     private final UserRepository           userRepository;
@@ -63,20 +64,27 @@ public class ContactRequestService {
     /**
      * Create a new contact request (trusted contact or protégée)
      */
-    public void createRequest(String requesterUid, ContactRequestDto requestDto) {
+    public void createRequest(String requesterUid, AddContactRequestDto requestDto) {
         log.info("Creating {} request from UID: {} to phone: {}", requestDto.contactType(), requesterUid,
                  requestDto.phoneNumber());
 
-        // Check if request already exists for this contact type
-        var existingRequest = requestRepository.findByRequesterUidAndTargetPhoneNumberAndContactType(requesterUid,
-                                                                                                     requestDto.phoneNumber(),
-                                                                                                     requestDto.contactType());
+        // Check if there's already a PENDING request for this contact type
+        var existingPendingRequest = requestRepository.findByRequesterUidAndTargetPhoneNumberAndContactTypeAndStatus(
+                requesterUid, requestDto.phoneNumber(), requestDto.contactType(), ContactRequestEntity.RequestStatus.PENDING);
 
-        if (existingRequest.isPresent()) {
-            log.warn("Request already exists for UID: {} to phone: {} with type: {}", requesterUid,
+        if (existingPendingRequest.isPresent()) {
+            log.warn("Pending request already exists for UID: {} to phone: {} with type: {}", requesterUid,
                      requestDto.phoneNumber(), requestDto.contactType());
             throw new IllegalStateException(
-                "Request already exists for this contact with type: " + requestDto.contactType());
+                "Pending request already exists for this contact with type: " + requestDto.contactType());
+        }
+
+        // Check if users currently have an active linked contact relationship
+        if (hasActiveLinkedContact(requesterUid, requestDto.phoneNumber(), requestDto.contactType())) {
+            log.warn("Active linked contact already exists for UID: {} to phone: {} with type: {}", requesterUid,
+                     requestDto.phoneNumber(), requestDto.contactType());
+            throw new IllegalStateException(
+                "Active contact relationship already exists with type: " + requestDto.contactType());
         }
 
         // Get requester's name
@@ -93,7 +101,8 @@ public class ContactRequestService {
         // Create the request
         ContactRequestEntity request =
             ContactRequestEntity.builder().requesterUid(requesterUid).requesterName(requesterName)
-                                .targetPhoneNumber(requestDto.phoneNumber()).targetUid(targetUid)
+                                .targetPhoneNumber(requestDto.phoneNumber()).targetName(requestDto.name())
+                                .targetUid(targetUid)
                                 .relationship(requestDto.relationship()).contactType(requestDto.contactType())
                                 .status(ContactRequestEntity.RequestStatus.PENDING).build();
 
@@ -270,6 +279,36 @@ public class ContactRequestService {
     }
 
     /**
+     * Cancel a pending contact request
+     */
+    public void cancelRequest(String requestId, String cancelingUserUid) {
+        log.info("Canceling request {} by UID: {}", requestId, cancelingUserUid);
+
+        ContactRequestEntity request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found"));
+
+        // Verify the canceling user is the requester
+        if (!cancelingUserUid.equals(request.getRequesterUid())) {
+            log.warn("Unauthorized cancel attempt - UID: {} tried to cancel request made by: {}",
+                    cancelingUserUid, request.getRequesterUid());
+            throw new IllegalArgumentException("User not authorized to cancel this request");
+        }
+
+        if (request.getStatus() != ContactRequestEntity.RequestStatus.PENDING) {
+            log.warn("Attempt to cancel non-pending request: {} with status: {}", requestId, request.getStatus());
+            throw new IllegalStateException("Only pending requests can be canceled");
+        }
+
+        // Update request status to CANCELED instead of deleting
+        request.setStatus(ContactRequestEntity.RequestStatus.CANCELED);
+        request.setRespondedAt(Instant.now());
+        requestRepository.save(request);
+
+        log.info("Successfully canceled {} request from {} to phone: {}",
+                request.getContactType(), request.getRequesterName(), request.getTargetPhoneNumber());
+    }
+
+    /**
      * Send push notification to requester when their contact request is approved
      */
     private void sendApprovalNotification(ContactRequestEntity request, String approvingUserUid) {
@@ -409,7 +448,7 @@ public class ContactRequestService {
     private void addLinkedContact(UserEntity user, String phoneNumber, String name, String relationship,
                                   ContactType contactType) {
         UserEntity.LinkedContact newContact =
-            new UserEntity.LinkedContact(phoneNumber, name, relationship, contactType);
+            new UserEntity.LinkedContact(phoneNumber, name, relationship, contactType, Instant.now(), null);
 
         if (user.getLinkedContacts() == null) {
             user.setLinkedContacts(List.of(newContact));
@@ -440,5 +479,41 @@ public class ContactRequestService {
             case RELATIONSHIP_SPOUSE -> RELATIONSHIP_SPOUSE;
             default -> RELATIONSHIP_CONTACT;
         };
+    }
+
+    /**
+     * Check if there is an active linked contact relationship for the given user and contact
+     */
+    private boolean hasActiveLinkedContact(String userUid, String targetPhoneNumber, ContactType contactType) {
+        // Check user's linked contacts
+        UserEntity user = userRepository.findByFirebaseUid(userUid).orElse(null);
+        if (user != null && user.getLinkedContacts() != null) {
+            for (UserEntity.LinkedContact contact : user.getLinkedContacts()) {
+                if (contact.phoneNumber().equals(targetPhoneNumber) && contact.contactType() == contactType) {
+                    return true;
+                }
+            }
+        }
+
+        // Check if target is a user and if their linked contacts include the user
+        UserEntity targetUser = userRepository.findByPhoneNumber(targetPhoneNumber).orElse(null);
+        if (targetUser != null && targetUser.getLinkedContacts() != null) {
+            for (UserEntity.LinkedContact contact : targetUser.getLinkedContacts()) {
+                if (contact.phoneNumber().equals(userUid) && contact.contactType() == contactType) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Cleanup old requests for the same contact to avoid unique constraint violation
+     */
+    private void cleanupOldRequests(String requesterUid, String targetPhoneNumber, ContactType contactType) {
+        // Delete old completed requests (approved or denied) for the same contact
+        requestRepository.deleteAllByRequesterUidAndTargetPhoneNumberAndContactTypeAndStatusNotIn(
+                requesterUid, targetPhoneNumber, contactType, List.of(ContactRequestEntity.RequestStatus.PENDING));
     }
 }

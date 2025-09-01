@@ -2,6 +2,7 @@ package com.protectalk.usermanagment.repo;
 
 import com.protectalk.usermanagment.model.ContactType;
 import com.protectalk.usermanagment.model.ContactRequestEntity;
+import com.protectalk.usermanagment.model.ContactRequestEntity.RequestStatus;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -30,6 +31,14 @@ public interface ContactRequestRepository extends MongoRepository<ContactRequest
     // Check if a request already exists between two users for a specific contact type
     Optional<ContactRequestEntity> findByRequesterUidAndTargetPhoneNumberAndContactType(
             String requesterUid, String targetPhoneNumber, ContactType contactType);
+
+    // Check if a pending request already exists between two users for a specific contact type
+    Optional<ContactRequestEntity> findByRequesterUidAndTargetPhoneNumberAndContactTypeAndStatus(
+            String requesterUid, String targetPhoneNumber, ContactType contactType, RequestStatus status);
+
+    // Delete old completed requests to avoid unique constraint issues
+    void deleteAllByRequesterUidAndTargetPhoneNumberAndContactTypeAndStatusNotIn(
+            String requesterUid, String targetPhoneNumber, ContactType contactType, List<RequestStatus> statuses);
 
     // Find all pending requests (for cleanup/expiration jobs)
     List<ContactRequestEntity> findByStatus(ContactRequestEntity.RequestStatus status);

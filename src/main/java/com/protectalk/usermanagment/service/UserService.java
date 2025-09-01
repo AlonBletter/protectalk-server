@@ -5,6 +5,7 @@ import com.google.firebase.auth.UserRecord;
 import com.protectalk.device.service.DeviceTokenService;
 import com.protectalk.usermanagment.dto.CompleteRegistrationRequestDto;
 import com.protectalk.usermanagment.dto.UserRequestDto;
+import com.protectalk.usermanagment.model.ContactRequestEntity;
 import com.protectalk.usermanagment.model.ContactType;
 import com.protectalk.usermanagment.model.UserEntity;
 import com.protectalk.usermanagment.repo.UserRepository;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import com.protectalk.usermanagment.dto.UserProfileResponseDto;
 import com.protectalk.usermanagment.repo.ContactRequestRepository;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -91,13 +94,12 @@ public class UserService {
 
         // Get pending received requests (where this user is the target)
         List<UserProfileResponseDto.ContactRequestDto> receivedRequests =
-                contactRequestRepository.findByTargetUidAndStatus(firebaseUid,
-                        com.protectalk.usermanagment.model.ContactRequestEntity.RequestStatus.PENDING)
+                contactRequestRepository.findByTargetUidAndStatus(firebaseUid, ContactRequestEntity.RequestStatus.PENDING)
                 .stream()
                 .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
                         .id(req.getId())
-                        .requesterName(req.getRequesterName())
                         .targetPhoneNumber(req.getTargetPhoneNumber())
+                        .targetName(req.getTargetName())
                         .relationship(req.getRelationship())
                         .contactType(req.getContactType().toString())
                         .status(req.getStatus().toString())
@@ -112,8 +114,8 @@ public class UserService {
                 .stream()
                 .map(req -> UserProfileResponseDto.ContactRequestDto.builder()
                         .id(req.getId())
-                        .requesterName(req.getRequesterName())
                         .targetPhoneNumber(req.getTargetPhoneNumber())
+                        .targetName(req.getTargetName())
                         .relationship(req.getRelationship())
                         .contactType(req.getContactType().toString())
                         .status(req.getStatus().toString())
@@ -187,6 +189,92 @@ public class UserService {
                     return tokens;
                 })
                 .orElse(List.of());
+    }
+
+    /**
+     * Delete a linked contact and remove the bidirectional relationship
+     */
+    public void deleteLinkedContact(String userUid, String contactPhoneNumber, ContactType contactType) {
+        log.info("Deleting linked contact for UID: {} - phone: {}, type: {}", userUid, contactPhoneNumber, contactType);
+
+        UserEntity user = userRepository.findByFirebaseUid(userUid)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (user.getLinkedContacts() == null) {
+            throw new IllegalArgumentException("No linked contacts found");
+        }
+
+        // Find the contact to remove
+        UserEntity.LinkedContact contactToRemove = user.getLinkedContacts().stream()
+                .filter(contact -> contact.phoneNumber().equals(contactPhoneNumber) &&
+                                 contact.contactType() == contactType &&
+                                 contact.removedAt() == null) // Only active contacts
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Contact not found or already removed"));
+
+        // Remove the contact from the current user
+        removeContactFromUser(user, contactToRemove);
+
+        // Find and remove the inverse relationship from the other user
+        UserEntity otherUser = userRepository.findByPhoneNumber(contactPhoneNumber).orElse(null);
+        if (otherUser != null && otherUser.getLinkedContacts() != null) {
+            // Determine the inverse contact type and find the user's phone number
+            ContactType inverseContactType = contactType == ContactType.TRUSTED_CONTACT ?
+                ContactType.PROTEGEE : ContactType.TRUSTED_CONTACT;
+
+            UserEntity.LinkedContact inverseContactToRemove = otherUser.getLinkedContacts().stream()
+                    .filter(contact -> contact.phoneNumber().equals(user.getPhoneNumber()) &&
+                                     contact.contactType() == inverseContactType &&
+                                     contact.removedAt() == null)
+                    .findFirst()
+                    .orElse(null);
+
+            if (inverseContactToRemove != null) {
+                removeContactFromUser(otherUser, inverseContactToRemove);
+                log.info("Successfully removed inverse {} contact {} from UID: {}",
+                        inverseContactType, user.getName(), otherUser.getFirebaseUid());
+            } else {
+                log.warn("Inverse relationship not found for {} in {}'s contacts",
+                        user.getPhoneNumber(), otherUser.getName());
+            }
+        } else {
+            log.warn("Other user not found or has no linked contacts for phone: {}", contactPhoneNumber);
+        }
+
+        log.info("Successfully removed {} contact {} from UID: {}", contactType, contactToRemove.name(), userUid);
+    }
+
+    /**
+     * Helper method to remove a contact from a user and move it to oldLinkedContacts
+     */
+    private void removeContactFromUser(UserEntity user, UserEntity.LinkedContact contactToRemove) {
+        // Create updated contact with removal timestamp
+        UserEntity.LinkedContact removedContact = new UserEntity.LinkedContact(
+                contactToRemove.phoneNumber(),
+                contactToRemove.name(),
+                contactToRemove.relationship(),
+                contactToRemove.contactType(),
+                contactToRemove.connectedAt(),
+                Instant.now() // Set removal timestamp
+        );
+
+        // Remove from linkedContacts
+        user.getLinkedContacts().removeIf(contact ->
+                contact.phoneNumber().equals(contactToRemove.phoneNumber()) &&
+                contact.contactType() == contactToRemove.contactType());
+
+        // Add to oldLinkedContacts for history tracking
+        if (user.getOldLinkedContacts() == null) {
+            user.setOldLinkedContacts(new ArrayList<>(List.of(removedContact)));
+        } else {
+            // Ensure it's a mutable list
+            if (!(user.getOldLinkedContacts() instanceof ArrayList)) {
+                user.setOldLinkedContacts(new ArrayList<>(user.getOldLinkedContacts()));
+            }
+            user.getOldLinkedContacts().add(removedContact);
+        }
+
+        userRepository.save(user);
     }
 
     // ---- helpers ----

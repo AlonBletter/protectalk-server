@@ -1,8 +1,7 @@
 package com.protectalk.usermanagment.controller;
 
-import com.google.firebase.auth.*;
 import com.protectalk.security.model.FirebasePrincipal;
-import com.protectalk.usermanagment.dto.ContactRequestDto;
+import com.protectalk.usermanagment.dto.AddContactRequestDto;
 import com.protectalk.usermanagment.dto.CompleteRegistrationRequestDto;
 import com.protectalk.usermanagment.dto.UserProfileResponseDto;
 import com.protectalk.usermanagment.dto.UserRequestDto;
@@ -18,10 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RequestMapping("/api/users")
@@ -34,7 +30,7 @@ public class UserController {
     @PostMapping("/contact-request")
     public ResponseEntity<String> sendContactRequest(
             @AuthenticationPrincipal FirebasePrincipal me,
-            @Valid @RequestBody ContactRequestDto request) {
+            @Valid @RequestBody AddContactRequestDto request) {
         log.info("Contact request received from UID: {} for phone: {} as {}",
                 me.uid(), request.phoneNumber(), request.contactType());
         try {
@@ -163,6 +159,52 @@ public class UserController {
             log.error("Failed to retrieve profile for UID: {}", me.uid(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
+        }
+    }
+
+    @DeleteMapping("/contacts")
+    public ResponseEntity<String> deleteLinkedContact(
+            @AuthenticationPrincipal FirebasePrincipal me,
+            @RequestParam String phoneNumber,
+            @RequestParam ContactType contactType) {
+        log.info("Delete contact request from UID: {} for phone: {} with type: {}",
+                me.uid(), phoneNumber, contactType);
+        try {
+            userService.deleteLinkedContact(me.uid(), phoneNumber, contactType);
+            log.info("Successfully deleted contact {} for UID: {}", phoneNumber, me.uid());
+            return ResponseEntity.ok("Contact deleted successfully");
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid delete contact request from UID: {} - {}", me.uid(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Failed to delete contact for UID: {}", me.uid(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/requests/{requestId}/cancel")
+    public ResponseEntity<String> cancelRequest(
+            @AuthenticationPrincipal FirebasePrincipal me,
+            @PathVariable String requestId) {
+        log.info("Cancel request attempt for request ID: {} by UID: {}", requestId, me.uid());
+        try {
+            contactRequestService.cancelRequest(requestId, me.uid());
+            log.info("Request {} canceled successfully by UID: {}", requestId, me.uid());
+            return ResponseEntity.ok("Request canceled successfully");
+        } catch (IllegalArgumentException e) {
+            log.warn("Bad request for cancellation - request ID: {}, UID: {} - {}", requestId, me.uid(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error: " + e.getMessage());
+        } catch (IllegalStateException e) {
+            log.warn("Conflict during cancellation - request ID: {}, UID: {} - {}", requestId, me.uid(), e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            log.error("Failed to cancel request ID: {} by UID: {}", requestId, me.uid(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error: " + e.getMessage());
         }
     }
 }
