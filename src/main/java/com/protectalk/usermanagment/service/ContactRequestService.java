@@ -372,14 +372,14 @@ public class ContactRequestService {
                 DATA_KEY_TARGET_PHONE_NUMBER, request.getTargetPhoneNumber()
         );
 
-        sendNotificationToTarget(request, title, body, data, LOG_TYPE_RECEIVED);
+        sendNotificationToTarget(request, title, body, data);
     }
 
     /**
      * Generic method to send push notification to the target user
      */
     private void sendNotificationToTarget(ContactRequestEntity request, String title, String body,
-                                        Map<String, String> data, String notificationType) {
+                                        Map<String, String> data) {
         try {
             // Get target user's device tokens
             List<String> tokens = deviceTokenService.getDeviceTokensForUser(request.getTargetUid());
@@ -393,7 +393,7 @@ public class ContactRequestService {
             var result = notificationGateway.send(message);
 
             log.info("Sent {} notification to target UID: {} - success: {}, failure: {}",
-                    notificationType, request.getTargetUid(), result.success(), result.failure());
+                     ContactRequestService.LOG_TYPE_RECEIVED, request.getTargetUid(), result.success(), result.failure());
 
             // Clean up invalid tokens if any
             if (!result.invalidTokens().isEmpty()) {
@@ -403,7 +403,7 @@ public class ContactRequestService {
             }
 
         } catch (Exception e) {
-            log.error("Failed to send {} notification for request: {}", notificationType, request.getId(), e);
+            log.error("Failed to send {} notification for request: {}", ContactRequestService.LOG_TYPE_RECEIVED, request.getId(), e);
             // Don't throw - request processing should succeed even if notification fails
         }
     }
@@ -485,9 +485,16 @@ public class ContactRequestService {
      * Check if there is an active linked contact relationship for the given user and contact
      */
     private boolean hasActiveLinkedContact(String userUid, String targetPhoneNumber, ContactType contactType) {
-        // Check user's linked contacts
+        // Get the user's phone number for proper comparison
         UserEntity user = userRepository.findByFirebaseUid(userUid).orElse(null);
-        if (user != null && user.getLinkedContacts() != null) {
+        if (user == null) {
+            return false;
+        }
+
+        String userPhoneNumber = user.getPhoneNumber();
+
+        // Check user's linked contacts
+        if (user.getLinkedContacts() != null) {
             for (UserEntity.LinkedContact contact : user.getLinkedContacts()) {
                 if (contact.phoneNumber().equals(targetPhoneNumber) && contact.contactType() == contactType) {
                     return true;
@@ -495,11 +502,15 @@ public class ContactRequestService {
             }
         }
 
-        // Check if target is a user and if their linked contacts include the user
+        // Check if target is a user and if their linked contacts include the user (by phone number)
         UserEntity targetUser = userRepository.findByPhoneNumber(targetPhoneNumber).orElse(null);
         if (targetUser != null && targetUser.getLinkedContacts() != null) {
+            // Determine the inverse contact type for the bidirectional relationship check
+            ContactType inverseContactType = contactType == ContactType.TRUSTED_CONTACT ?
+                ContactType.PROTEGEE : ContactType.TRUSTED_CONTACT;
+
             for (UserEntity.LinkedContact contact : targetUser.getLinkedContacts()) {
-                if (contact.phoneNumber().equals(userUid) && contact.contactType() == contactType) {
+                if (contact.phoneNumber().equals(userPhoneNumber) && contact.contactType() == inverseContactType) {
                     return true;
                 }
             }
