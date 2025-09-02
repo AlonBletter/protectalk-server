@@ -21,7 +21,7 @@ public class AlertRecordEntity {
     private String id;
 
     @Indexed
-    private String userId;          // owner (UID)
+    private String userId;          // firebase owner (UID)
 
     @Indexed
     private String eventId;         // optional external event/call id
