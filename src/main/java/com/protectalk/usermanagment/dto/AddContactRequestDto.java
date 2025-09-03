@@ -4,7 +4,7 @@ import com.protectalk.usermanagment.model.ContactType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record ContactRequestDto(
+public record AddContactRequestDto(
         @NotBlank String name,
         @NotBlank String phoneNumber,
         @NotBlank String relationship,

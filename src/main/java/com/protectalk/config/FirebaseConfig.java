@@ -5,26 +5,41 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessaging;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 
 @Configuration
+@Slf4j
 public class FirebaseConfig {
+
+    @Value("${firebase.service-account.path}")
+    private String firebaseServiceAccountPath;
 
     @Bean
     public FirebaseApp firebaseApp() throws Exception {
-        InputStream service = new java.io.FileInputStream("/Users/alonbletter/Documents/firebase-service-account.json");
-        GoogleCredentials credentials = GoogleCredentials.fromStream(service);
-        FirebaseOptions options = FirebaseOptions.builder().setCredentials(credentials).build();
-        FirebaseApp app = FirebaseApp.getApps().isEmpty() ? FirebaseApp.initializeApp(options) : FirebaseApp.getInstance();
+        log.info("Initializing Firebase app with service account from: {}", firebaseServiceAccountPath);
 
-        // Log Firebase project info for debugging
-        System.out.println("Firebase app initialized");
-        System.out.println("Project ID: " + app.getOptions().getProjectId());
+        try (InputStream serviceAccount = new FileInputStream(firebaseServiceAccountPath)) {
+            GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(credentials)
+                    .build();
 
-        return app;
+            FirebaseApp app = FirebaseApp.getApps().isEmpty()
+                    ? FirebaseApp.initializeApp(options)
+                    : FirebaseApp.getInstance();
+
+            log.info("Firebase app initialized successfully - Project ID: {}", app.getOptions().getProjectId());
+            return app;
+        } catch (Exception e) {
+            log.error("Failed to initialize Firebase app with service account path: {}", firebaseServiceAccountPath, e);
+            throw e;
+        }
     }
 
     @Bean
