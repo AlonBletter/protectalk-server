@@ -28,6 +28,7 @@ public class AlertRecordEntity {
 
     private String callerNumber;
     private RiskLevel riskLevel;
+    private String transcript;
     private double modelScore;
     private String modelAnalysis;
     private int durationInSeconds;
@@ -50,6 +51,7 @@ public class AlertRecordEntity {
         entity.setCallerNumber(req.callerNumber());
         entity.setRiskLevel(req.riskLevel());
         entity.setModelScore(req.modelScore());
+        entity.setTranscript(req.transcript());
         entity.setModelAnalysis(req.modelAnalysis());
         entity.setOccurredAt(req.occurredAt());
         entity.setDurationInSeconds(req.durationInSeconds());

@@ -23,15 +23,15 @@ public class FirebaseConfig {
     @Bean
     public FirebaseApp firebaseApp() throws Exception {
         log.info("Initializing Firebase app with service account from: {}", firebaseServiceAccountPath);
-
+        
         try (InputStream serviceAccount = new FileInputStream(firebaseServiceAccountPath)) {
             GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(credentials)
                     .build();
-
-            FirebaseApp app = FirebaseApp.getApps().isEmpty()
-                    ? FirebaseApp.initializeApp(options)
+            
+            FirebaseApp app = FirebaseApp.getApps().isEmpty() 
+                    ? FirebaseApp.initializeApp(options) 
                     : FirebaseApp.getInstance();
 
             log.info("Firebase app initialized successfully - Project ID: {}", app.getOptions().getProjectId());

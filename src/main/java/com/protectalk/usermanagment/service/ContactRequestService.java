@@ -99,12 +99,16 @@ public class ContactRequestService {
                   targetUid != null ? targetUid : "not registered");
 
         // Create the request
-        ContactRequestEntity request =
-            ContactRequestEntity.builder().requesterUid(requesterUid).requesterName(requesterName)
-                                .targetPhoneNumber(requestDto.phoneNumber()).targetName(requestDto.name())
-                                .targetUid(targetUid)
-                                .relationship(requestDto.relationship()).contactType(requestDto.contactType())
-                                .status(ContactRequestEntity.RequestStatus.PENDING).build();
+        ContactRequestEntity request = ContactRequestEntity.builder()
+                                                           .requesterUid(requesterUid)
+                                                           .requesterName(requesterName)
+                                                           .targetPhoneNumber(requestDto.phoneNumber())
+                                                           .targetName(requestDto.name())
+                                                           .targetUid(targetUid)
+                                                           .relationship(requestDto.relationship())
+                                                           .contactType(requestDto.contactType())
+                                                           .status(ContactRequestEntity.RequestStatus.PENDING)
+                                                           .build();
 
         requestRepository.save(request);
         log.info("Successfully created {} request from {} to {}", requestDto.contactType(), requesterName,
@@ -357,10 +361,10 @@ public class ContactRequestService {
      * Send push notification to target user when they receive a new contact request
      */
     private void sendReceivedNotification(ContactRequestEntity request) {
-        String contactTypeDisplay = request.getContactType() == ContactType.TRUSTED_CONTACT ?
-                CONTACT_TYPE_DISPLAY_TRUSTED : CONTACT_TYPE_DISPLAY_PROTEGEE;
+        String contactTypeDisplay =
+            request.getContactType() == ContactType.TRUSTED_CONTACT ? CONTACT_TYPE_DISPLAY_PROTEGEE :
+            CONTACT_TYPE_DISPLAY_TRUSTED;
 
-        String title = NOTIFICATION_TITLE_RECEIVED;
         String body = String.format("%s wants to add you as their %s",
                 request.getRequesterName(), contactTypeDisplay);
 
@@ -372,7 +376,7 @@ public class ContactRequestService {
                 DATA_KEY_TARGET_PHONE_NUMBER, request.getTargetPhoneNumber()
         );
 
-        sendNotificationToTarget(request, title, body, data);
+        sendNotificationToTarget(request, NOTIFICATION_TITLE_RECEIVED, body, data);
     }
 
     /**
