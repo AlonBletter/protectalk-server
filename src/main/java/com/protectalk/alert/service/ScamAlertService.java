@@ -31,7 +31,8 @@ public class ScamAlertService {
 
     public ScamAlertService(@Value("${protectalk.threshold.modelScore:0.75}") double minModelScore,
                             ScamAlertRepository scamAlertRepository, DeviceTokenService deviceTokenService,
-                            NotificationGateway notifier, UserService userService, NotificationGateway notifierGateway, NotificationComposer notificationComposer) {
+                            UserService userService, NotificationGateway notifierGateway,
+                            NotificationComposer notificationComposer) {
         this.minModelScore = minModelScore; // immutable after wiring
         this.scamAlertRepository = scamAlertRepository;
         this.deviceTokenService = deviceTokenService;

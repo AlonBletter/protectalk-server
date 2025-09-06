@@ -33,7 +33,6 @@ public class ContactRequestService {
     private static final String CONTACT_TYPE_DISPLAY_PROTEGEE = "protegee";
     private static final String DEFAULT_USER_NAME             = "Someone";
     private static final String DEFAULT_UNKNOWN_USER          = "Unknown User";
-    private static final String DEFAULT_UNKNOWN               = "Unknown";
 
     // Notification data keys
     private static final String DATA_KEY_TYPE                = "type";
@@ -54,7 +53,6 @@ public class ContactRequestService {
     private static final String LOG_TYPE_APPROVAL = "approval";
     private static final String LOG_TYPE_DENIAL   = "denial";
     private static final String LOG_TYPE_RECEIVED = "received";
-    private static final String LOG_TYPE_CANCEL   = "cancel";
 
     private final ContactRequestRepository requestRepository;
     private final UserRepository           userRepository;
@@ -376,14 +374,14 @@ public class ContactRequestService {
                 DATA_KEY_TARGET_PHONE_NUMBER, request.getTargetPhoneNumber()
         );
 
-        sendNotificationToTarget(request, NOTIFICATION_TITLE_RECEIVED, body, data);
+        sendNotificationToTarget(request, body, data);
     }
 
     /**
      * Generic method to send push notification to the target user
      */
-    private void sendNotificationToTarget(ContactRequestEntity request, String title, String body,
-                                        Map<String, String> data) {
+    private void sendNotificationToTarget(ContactRequestEntity request, String body,
+                                          Map<String, String> data) {
         try {
             // Get target user's device tokens
             List<String> tokens = deviceTokenService.getDeviceTokensForUser(request.getTargetUid());
@@ -393,11 +391,13 @@ public class ContactRequestService {
                 return;
             }
 
-            OutboundMessage message = new OutboundMessage(title, body, data, tokens);
-            var result = notificationGateway.send(message);
+            OutboundMessage message =
+                new OutboundMessage(ContactRequestService.NOTIFICATION_TITLE_RECEIVED, body, data, tokens);
+            var             result  = notificationGateway.send(message);
 
             log.info("Sent {} notification to target UID: {} - success: {}, failure: {}",
-                     ContactRequestService.LOG_TYPE_RECEIVED, request.getTargetUid(), result.success(), result.failure());
+                     ContactRequestService.LOG_TYPE_RECEIVED, request.getTargetUid(), result.success(),
+                     result.failure());
 
             // Clean up invalid tokens if any
             if (!result.invalidTokens().isEmpty()) {
@@ -521,14 +521,5 @@ public class ContactRequestService {
         }
 
         return false;
-    }
-
-    /**
-     * Cleanup old requests for the same contact to avoid unique constraint violation
-     */
-    private void cleanupOldRequests(String requesterUid, String targetPhoneNumber, ContactType contactType) {
-        // Delete old completed requests (approved or denied) for the same contact
-        requestRepository.deleteAllByRequesterUidAndTargetPhoneNumberAndContactTypeAndStatusNotIn(
-                requesterUid, targetPhoneNumber, contactType, List.of(ContactRequestEntity.RequestStatus.PENDING));
     }
 }
