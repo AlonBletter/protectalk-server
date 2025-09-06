@@ -22,7 +22,7 @@ public enum Platform {
         try {
             return Platform.valueOf(value.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid platform value: " + value +
+            throw new IllegalArgumentException("Invalid platform value: " + value + 
                 ". Valid values are: android, ios, web, desktop", e);
         }
     }
