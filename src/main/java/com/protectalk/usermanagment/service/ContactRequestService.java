@@ -321,7 +321,7 @@ public class ContactRequestService {
             request.getContactType() == ContactType.TRUSTED_CONTACT ? CONTACT_TYPE_DISPLAY_TRUSTED :
             CONTACT_TYPE_DISPLAY_PROTEGEE;
 
-        String body  = String.format("%s accepted your %s request", approvingUserName, contactTypeDisplay);
+        String body = String.format("%s is now your %s", approvingUserName, contactTypeDisplay);
 
         Map<String, String> data =
             Map.of(DATA_KEY_TYPE, NOTIFICATION_TYPE_APPROVED,
@@ -344,7 +344,7 @@ public class ContactRequestService {
             request.getContactType() == ContactType.TRUSTED_CONTACT ? CONTACT_TYPE_DISPLAY_TRUSTED :
             CONTACT_TYPE_DISPLAY_PROTEGEE;
 
-        String body  = String.format("%s denied your %s request", denyingUserName, contactTypeDisplay);
+        String body = String.format("%s declined to be your %s", denyingUserName, contactTypeDisplay);
 
         Map<String, String> data =
             Map.of(DATA_KEY_TYPE, NOTIFICATION_TYPE_DENIED,
@@ -363,7 +363,7 @@ public class ContactRequestService {
             request.getContactType() == ContactType.TRUSTED_CONTACT ? CONTACT_TYPE_DISPLAY_PROTEGEE :
             CONTACT_TYPE_DISPLAY_TRUSTED;
 
-        String body = String.format("%s wants to add you as their %s",
+        String body = String.format("%s wants to be your %s",
                 request.getRequesterName(), contactTypeDisplay);
 
         Map<String, String> data = Map.of(
