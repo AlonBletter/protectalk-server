@@ -26,7 +26,7 @@ Built with **Java + Spring**, it provides authentication, messaging, and real-ti
 
 ---
 
-## Server API – Postman Collection
+## 🌐 Server API – Postman Collection
 
 We provide a ready-to-use [Postman Collection](https://github.com/AlonBletter/ProtecTalk-Documents/blob/main/Software%20Utils/ProtecTalk%20Collection.postman_collection.json) for interacting with the **ProtecTalk Server API**.
 
