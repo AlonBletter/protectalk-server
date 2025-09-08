@@ -78,9 +78,6 @@ docker compose up --build -d
 
 ## 📝 Notes
 - Make sure to provide your **Firebase service account JSON** in `./config/firebase-service-account.json`.  
-- For production, update `SPRING_PROFILES_ACTIVE` and configure secrets in a safe way.  
+- For production, update `SPRING_PROFILES_ACTIVE` and configure secrets in a safe way.
 
 ---
-
-## 📜 License
-MIT License © ProtecTalk
